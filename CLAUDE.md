@@ -102,7 +102,7 @@ Three exchange/routing-key pairs (defined in `RabbitMQConfig`):
 ## External Services
 
 - **AliCloud OSS**: File/avatar upload via `OssUtil` — bucket `inforum`, endpoint `oss-cn-wulanchabu`
-- **AliCloud SMS**: Verification codes via `dysmsapi20170525` SDK — sign name `速通互联验证码`
+- **AliCloud SMS**: Verification codes via `dysmsapi20170525` SDK — sign name configured in application-dev.yml
 
 ## Configuration Setup
 
