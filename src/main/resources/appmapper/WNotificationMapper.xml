@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.app.dao.WNotificationMapper">
+
+    <resultMap id="MessageMap" type="Message">
+        <id property="messageId" column="message_id"/>
+        <result property="senderId" column="sender_id"/>
+        <result property="receiverId" column="receiver_id"/>
+        <result property="messageType" column="message_type"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="msgFormat" column="msg_format"/>
+        <result property="imageUrl" column="image_url"/>
+        <result property="relatedType" column="related_type"/>
+        <result property="isRead" column="is_read"/>
+        <result property="readTime" column="read_time"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="selectLatestSystemNotification" resultMap="MessageMap">
+        SELECT
+            message_id,
+            sender_id,
+            receiver_id,
+            message_type,
+            title,
+            content,
+            msg_format,
+            image_url,
+            related_type,
+            is_read,
+            read_time,
+            create_time
+        FROM message
+        WHERE message_type = 1
+        AND receiver_id IS NULL
+        AND NOT EXISTS (
+            SELECT 1 FROM message_receiver mr WHERE mr.message_id = message.message_id
+        )
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectLatestUserSystemNotification" resultMap="MessageMap">
+        SELECT DISTINCT
+            m.message_id,
+            m.sender_id,
+            m.receiver_id,
+            m.message_type,
+            m.title,
+            m.content,
+            m.msg_format,
+            m.image_url,
+            m.related_type,
+            m.is_read,
+            m.read_time,
+            m.create_time
+        FROM message m
+        LEFT JOIN message_receiver mr ON m.message_id = mr.message_id
+        WHERE m.message_type = 1
+        AND (
+            (m.receiver_id = #{userId})
+            OR (mr.receiver_id = #{userId})
+        )
+        ORDER BY m.create_time DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectNotificationById" resultMap="MessageMap">
+        SELECT
+            message_id,
+            sender_id,
+            receiver_id,
+            message_type,
+            title,
+            content,
+            msg_format,
+            image_url,
+            related_type,
+            is_read,
+            read_time,
+            create_time
+        FROM message
+        WHERE message_id = #{messageId}
+        AND message_type = 1
+    </select>
+
+    <select id="selectSystemNotifications" resultMap="MessageMap">
+        SELECT
+            message_id,
+            sender_id,
+            receiver_id,
+            message_type,
+            title,
+            content,
+            msg_format,
+            image_url,
+            related_type,
+            is_read,
+            read_time,
+            create_time
+        FROM message
+        WHERE message_type = 1
+        ORDER BY create_time DESC
+        <if test="start != null and size != null">
+            LIMIT #{start}, #{size}
+        </if>
+    </select>
+
+    <select id="countSystemNotifications" resultType="int">
+        SELECT COUNT(*)
+        FROM message
+        WHERE message_type = 1
+    </select>
+
+    <select id="selectUnreadUserNotifications" resultMap="MessageMap">
+        SELECT DISTINCT
+            m.message_id,
+            m.sender_id,
+            m.receiver_id,
+            m.message_type,
+            m.title,
+            m.content,
+            m.msg_format,
+            m.image_url,
+            m.related_type,
+            COALESCE(mr.is_read, 0) as is_read,
+            mr.read_time,
+            m.create_time
+        FROM message m
+        INNER JOIN message_receiver mr ON m.message_id = mr.message_id
+        WHERE m.message_type = 1
+        AND mr.receiver_id = #{userId}
+        AND COALESCE(mr.is_read, 0) = 0
+        ORDER BY m.create_time DESC
+    </select>
+
+    <select id="selectUnreadDirectUserNotifications" resultMap="MessageMap">
+        SELECT
+            message_id,
+            sender_id,
+            receiver_id,
+            message_type,
+            title,
+            content,
+            msg_format,
+            image_url,
+            related_type,
+            is_read,
+            read_time,
+            create_time
+        FROM message
+        WHERE message_type = 1
+        AND receiver_id = #{userId}
+        AND is_read = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <insert id="insertNotification" parameterType="Message">
+        INSERT INTO message (
+            sender_id,
+            receiver_id,
+            message_type,
+            title,
+            content,
+            msg_format,
+            image_url,
+            related_type,
+            is_read,
+            create_time
+        ) VALUES (
+            NULL,
+            #{receiverId},
+            1,
+            #{title},
+            #{content},
+            0,
+            NULL,
+            NULL,
+            0,
+            NOW()
+        )
+    </insert>
+
+</mapper>

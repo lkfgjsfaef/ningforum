@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>小宁论坛 - 所有帖子</title>
+    <meta name="keywords" content="小宁论坛,后台管理,所有帖子">
+    <meta name="description" content="小宁论坛后台管理系统 - 所有帖子页面">
+
+    <link rel="shortcut icon" th:href="@{/favicon.ico}">
+    <link th:href="@{/css/bootstrap.min.css?v=3.3.6}" rel="stylesheet">
+    <link th:href="@{/css/font-awesome.css?v=4.4.0}" rel="stylesheet">
+
+    <link th:href="@{/css/animate.css}" rel="stylesheet">
+    <link th:href="@{/css/style.css?v=4.1.0}" rel="stylesheet">
+
+    <style>
+        /* 调整社交动态样式 */
+        .social-feed-box {
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+        }
+        
+        .social-avatar {
+            padding: 15px;
+            border-bottom: 1px solid #f3f4f6;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .social-avatar img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+        
+        .avatar-info {
+            flex: 1;
+        }
+        
+        .avatar-info a {
+            font-weight: 500;
+            color: #1f2937;
+        }
+        
+        .avatar-info small {
+            color: #6b7280;
+            margin-left: 8px;
+        }
+        
+        /* 状态指示器 */
+        .status-indicator {
+            width: 60px;
+            height: 30px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 500;
+            color: white;
+        }
+        
+        .status-indicator.passed {
+            background-color: #10b981;
+        }
+        
+        .status-indicator.rejected {
+            background-color: #ef4444;
+        }
+        
+        .status-indicator.pending {
+            background-color: #f59e0b;
+        }
+        
+        .social-body {
+            padding: 15px;
+        }
+        
+        .social-body p {
+            margin-bottom: 15px;
+        }
+        
+        .social-body img {
+            margin-top: 0;
+            border-radius: 4px;
+            width: 100%;
+            height: auto;
+        }
+        
+        .social-footer {
+            padding: 10px 15px;
+            border-top: 1px solid #f3f4f6;
+            background: #f9fafb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .stats span {
+            color: #6b7280;
+            font-size: 12px;
+        }
+        
+        /* 复审按钮样式 */
+        .review-actions button {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: none;
+            color: white;
+            margin-left: 8px;
+        }
+        
+        .btn-review-pass {
+            background-color: #3b82f6;
+        }
+        
+        .btn-review-reject {
+            background-color: #9ca3af;
+        }
+        
+        /* 移除不需要的元素 */
+        .social-action,
+        .social-comment {
+            display: none;
+        }
+        
+        /* 页面标题样式 */
+        .page-title {
+            margin-bottom: 20px;
+        }
+        
+        /* 新的帖子列表样式 */
+        .posts-container {
+            margin-top: 20px;
+        }
+        
+        .posts-header {
+            display: flex;
+            background-color: #f3f4f6;
+            padding: 10px 15px;
+            border-radius: 4px 4px 0 0;
+            font-weight: 500;
+            font-size: 14px;
+            color: #374151;
+            align-items: center;
+        }
+        
+        .posts-header > div {
+            display: flex;
+            align-items: center;
+        }
+        
+        .post-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+            background-color: white;
+            transition: background-color 0.2s;
+        }
+        
+        .post-item:hover {
+            background-color: #f9fafb;
+        }
+        
+        .post-item:last-child {
+            border-radius: 0 0 4px 4px;
+        }
+        
+        /* 分页样式统一为消息管理页面样式 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            border-top: none;
+        }
+        .pagination li {
+            display: inline-block;
+            margin: 0 2px;
+        }
+        .pagination li a {
+            display: block;
+            padding: 6px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            color: #6b7280;
+            text-decoration: none;
+            cursor: pointer;
+            background: white;
+        }
+        .pagination li.active a {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .pagination li.disabled a {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        .pagination li a:hover {
+            background: #f3f4f6;
+        }
+        .pagination li.disabled a:hover {
+            background: white;
+        }
+        
+        .post-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+        
+        .post-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .post-user {
+            font-weight: 500;
+            color: #1f2937;
+            min-width: 80px;
+        }
+        
+        .post-time {
+            color: #6b7280;
+            font-size: 14px;
+            min-width: 120px;
+        }
+        
+        .post-content {
+            flex: 1;
+            color: #4b5563;
+            font-size: 14px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            /* 显示更多字符 */
+            max-width: 400px;
+        }
+        
+        .post-status {
+            min-width: 80px;
+            text-align: center;
+        }
+        
+        .post-actions {
+            min-width: 100px;
+            text-align: center;
+        }
+        
+        /* 模态框样式 */
+        .modal {
+            z-index: 1050;
+        }
+        
+        .modal-backdrop {
+            z-index: 1040;
+        }
+        
+        .modal-content {
+            border-radius: 8px;
+            z-index: 1051;
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .modal-body {
+            padding: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        /* 调整模态框中图片大小 */
+        .modal-body img {
+            max-width: 30%;
+            height: auto;
+            max-height: 200px;
+            margin: 10px 1.5%;
+            display: inline-block;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        /* 图片悬停效果 */
+        .modal-body img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 多张图片时的布局 */
+        .modal-body .social-feed-box img {
+            margin-top: 15px;
+        }
+        
+        /* 图片查看器模态框 - 占满整个屏幕 */
+        #imageViewerModal {
+            padding-right: 0 !important;
+        }
+        
+        #imageViewerModal .modal-dialog {
+            width: 100% !important;
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        #imageViewerModal .modal-content {
+            background: rgba(0, 0, 0, 0.98);
+            border: none !important;
+            border-radius: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            min-height: 100vh !important;
+            margin: 0 !important;
+        }
+        
+        #imageViewerModal .modal-header {
+            background: transparent;
+            border-bottom: none;
+            color: white;
+            padding: 20px 30px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+        }
+        
+        #imageViewerModal .modal-header .close {
+            color: white;
+            opacity: 1;
+            font-size: 40px;
+            margin-top: -10px;
+            text-shadow: none;
+        }
+        
+        #imageViewerModal .modal-body {
+            padding: 0 !important;
+            text-align: center;
+            background: transparent;
+            overflow: hidden;
+            height: 100% !important;
+            min-height: 100vh !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 !important;
+        }
+        
+        #imageViewerModal .modal-footer {
+            display: none !important;
+        }
+        
+        /* 确保图片查看器中的图片占满整个屏幕 */
+        #imageViewerModal .modal-body img {
+            max-width: 100vw !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-height: 100vh !important;
+            display: block !important;
+            margin: 0 auto !important;
+            cursor: default !important;
+            border-radius: 0 !important;
+            object-fit: cover !important;
+        }
+        
+        /* 重置图片查看器中图片的所有可能影响的样式 */
+        #imageViewerModal .modal-body * {
+            box-sizing: border-box;
+        }
+        
+        #imageViewerModal .modal-body .img-responsive {
+            max-width: 100vw !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-height: 100vh !important;
+            object-fit: cover !important;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        /* 审核按钮样式 */
+        .actions button {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 4px;
+        }
+        
+        .btn-approve {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            margin-right: 8px;
+        }
+        
+        .btn-reject {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+
+<body class="gray-bg">
+    <div class="wrapper wrapper-content  animated fadeInRight">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="ibox">
+                    <div class="ibox-content">
+                        <h3 class="m-b-sm page-title">所有帖子</h3>
+                        
+                        <!-- 搜索栏 -->
+                        <div class="row m-b-sm">
+                            <div class="col-lg-12">
+                                <form class="form-inline" id="search-form" style="width: 100%; display: flex; align-items: center;">
+                                    <div class="form-group" style="flex: 1; display: flex;">
+                                        <input type="text" id="search-keyword" placeholder="输入搜索内容" class="form-control" style="flex: 1; min-width: 200px; border-radius: 4px 0 0 4px;">
+                                        <select id="search-type" class="form-control" style="width: 120px; border-radius: 0;">
+                                            <option value="user">用户</option>
+                                            <option value="content">帖子内容</option>
+                                        </select>
+                                        <input type="date" id="search-date" class="form-control" style="width: 150px; border-radius: 0;">
+                                        <select id="search-status" class="form-control" style="width: 120px; border-radius: 0 4px 4px 0;">
+                                            <option value="all">全部状态</option>
+                                            <option value="passed">已通过</option>
+                                            <option value="pending">未审核</option>
+                                            <option value="rejected">未通过</option>
+                                        </select>
+                                    </div>
+                                    <div style="margin-left: 10px;">
+                                        <button type="button" class="btn btn-primary" id="search-btn" style="margin-right: 5px;">搜索</button>
+                                        <button type="button" class="btn btn-white" id="reset-btn">重置</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- 帖子列表 -->
+                        <div class="posts-container">
+                            <div class="posts-header">
+                                <div style="width: 60px;"></div>
+                                <div style="flex: 0 0 100px;">用户名</div>
+                                <div style="flex: 0 0 150px;">发布时间</div>
+                                <div style="flex: 1;">内容详情</div>
+                                <div style="width: 80px;">状态</div>
+                                <div style="width: 100px;">操作</div>
+                            </div>
+                            
+                            <div id="posts-list">
+                                <!-- 帖子列表将通过JavaScript动态加载 -->
+                            </div>
+                        </div>
+                        
+                        <!-- 分页控件 -->
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div class="pagination-wrapper" style="text-align: center;">
+                                    <ul class="pagination" id="posts-pagination" style="margin: 0;">
+                                        <!-- 分页按钮将通过JavaScript动态生成 -->
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- 帖子详情模态框 -->
+    <div class="modal fade" id="postModal" tabindex="-1" role="dialog" aria-labelledby="postModalLabel">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="postModalLabel">帖子详情</h4>
+                </div>
+                <div class="modal-body">
+                    <!-- 模态框内容将通过JavaScript动态生成 -->
+                    <div id="modalContent"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 图片查看器模态框 -->
+    <div class="modal fade" id="imageViewerModal" tabindex="-1" role="dialog" aria-labelledby="imageViewerModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="imageViewerModalLabel">图片查看</h4>
+                </div>
+                <div class="modal-body">
+                    <img id="viewerImage" src="" alt="放大图片">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 全局js -->
+    <script th:src="@{/js/jquery.min.js?v=2.1.4}"></script>
+    <script th:src="@{/js/bootstrap.min.js?v=3.3.6}"></script>
+
+    <!-- 自定义js -->
+    <script th:src="@{/js/content.js?v=1.0.0}"></script>
+    
+    <script>
+        // 分页相关变量
+        let currentPage = 1;
+        let pageSize = 10;
+        let totalPages = 1;
+        let totalPosts = 0;
+
+        // 格式化日期时间
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}年${month}月${day}日 ${hours}:${minutes}`;
+        }
+
+        // 格式化日期
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${month}月${day}日 ${hours}:${minutes}`;
+        }
+
+        // 获取状态文本和class
+        function getStatusInfo(status) {
+            if (status === 0) {
+                return { text: '未审核', class: 'pending' };
+            } else if (status === 1) {
+                return { text: '已通过', class: 'passed' };
+            } else if (status === 2) {
+                return { text: '已删除', class: 'rejected' };
+            } else if (status === 3) {
+                return { text: '已结束', class: 'rejected' };
+            } else if (status === 4) {
+                return { text: '未通过', class: 'rejected' };
+            }
+            return { text: '未知', class: '' };
+        }
+
+        // 获取头像URL（支持OSS URL和本地路径）
+        function getAvatarUrl(avatar) {
+            if (!avatar || avatar === 'default_avatar.png') {
+                return '/img/user.png';
+            }
+            // 如果是完整的URL（OSS URL），直接返回
+            if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+                return avatar;
+            }
+            // 否则返回本地路径
+            return '/img/' + avatar;
+        }
+
+        // 获取图片URL（支持OSS URL和本地路径）
+        function getImageUrl(image) {
+            if (!image) return null;
+            // 如果是完整的URL（OSS URL），直接返回
+            if (image.startsWith('http://') || image.startsWith('https://')) {
+                return image;
+            }
+            // 否则返回本地路径
+            return '/img/' + image;
+        }
+
+        // 更新未审核帖子数量（用于更新index.html中的显示）
+        function updatePendingPostsCount() {
+            // 从后端获取待审核帖子数量
+            $.ajax({
+                url: '/admin/posts/pendingCount',
+                type: 'GET',
+                success: function(data) {
+                    const pendingCount = data.pendingCount || 0;
+                    // 通过postMessage通知父窗口更新未审核帖子数量
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({
+                            type: 'updatePendingPostsCount',
+                            count: pendingCount
+                        }, '*');
+                    }
+                },
+                error: function() {
+                    console.error('获取待审核帖子数量失败');
+                }
+            });
+        }
+
+        // 初始化页面
+        $(document).ready(function() {
+            // 加载帖子列表
+            loadPosts();
+
+            // 搜索按钮点击事件
+            $('#search-btn').on('click', function() {
+                currentPage = 1;
+                loadPosts();
+            });
+
+            // 回车键搜索
+            $('#search-keyword').on('keypress', function(e) {
+                if (e.which === 13) {
+                    currentPage = 1;
+                    loadPosts();
+                }
+            });
+
+            // 重置按钮点击事件
+            $('#reset-btn').on('click', function() {
+                $('#search-keyword').val('');
+                $('#search-date').val('');
+                $('#search-type').val('user');
+                $('#search-status').val('all');
+                currentPage = 1;
+                loadPosts();
+            });
+
+            // 监听来自父窗口的请求
+            window.addEventListener('message', function(event) {
+                if (event.data && event.data.type === 'getPendingPostsCount') {
+                    updatePendingPostsCount();
+                }
+            });
+
+            // 初始化时更新待审核数量
+            updatePendingPostsCount();
+        });
+
+        // 加载帖子列表
+        function loadPosts() {
+            const keyword = $('#search-keyword').val();
+            const searchType = $('#search-type').val();
+            const date = $('#search-date').val();
+            const statusFilter = $('#search-status').val();
+
+            // 构建请求参数
+            const params = {
+                page: currentPage,
+                pageSize: pageSize
+            };
+            if (keyword) params.keyword = keyword;
+            if (searchType) params.searchType = searchType;
+            if (date) params.date = date;
+            if (statusFilter) params.statusFilter = statusFilter;
+
+            // 显示加载状态
+            const $postsList = $('#posts-list');
+            $postsList.html('<div class="post-item" style="text-align: center; padding: 20px;">加载中...</div>');
+
+            // 发送AJAX请求
+            $.ajax({
+                url: '/admin/posts/list',
+                type: 'GET',
+                data: params,
+                success: function(data) {
+                    totalPages = data.totalPages || 1;
+                    totalPosts = data.total || 0;
+                    const posts = data.posts || [];
+
+                    // 渲染帖子列表
+                    renderPostsList(posts);
+
+                    // 更新分页
+                    updatePagination();
+                },
+                error: function(xhr, status, error) {
+                    console.error('加载帖子列表失败:', error);
+                    $postsList.html('<div class="post-item" style="text-align: center; padding: 20px; color: red;">加载失败，请刷新重试</div>');
+                }
+            });
+        }
+
+        // 渲染帖子列表
+        function renderPostsList(posts) {
+            const $postsList = $('#posts-list');
+            $postsList.empty();
+
+            if (posts.length === 0) {
+                $postsList.append('<div class="post-item" style="text-align: center; padding: 20px;">暂无帖子</div>');
+                return;
+            }
+
+            posts.forEach(function(post) {
+                const statusInfo = getStatusInfo(post.status);
+                const avatarUrl = getAvatarUrl(post.avatar);
+                const displayContent = post.title || post.content || '无内容';
+                const shortContent = displayContent.length > 50 ? displayContent.substring(0, 50) + '...' : displayContent;
+                
+                // 根据状态确定状态字符串（用于传递给模态框）
+                let statusStr = 'pending';
+                if (post.status === 1) {
+                    statusStr = 'passed';
+                } else if (post.status === 4) {
+                    statusStr = 'rejected';
+                } else if (post.status === 2 || post.status === 3) {
+                    statusStr = 'other';
+                }
+
+                const $postItem = $(`
+                    <div class="post-item" data-post-id="${post.postId}">
+                        <img src="${avatarUrl}" class="post-avatar" onerror="this.src='/img/user.png'">
+                        <div class="post-info">
+                            <div class="post-user">${post.username || '未知用户'}</div>
+                            <div class="post-time">${formatDate(post.createTime)}</div>
+                            <div class="post-content">${shortContent}</div>
+                        </div>
+                        <div class="post-status">
+                            <div class="status-indicator ${statusInfo.class}">${statusInfo.text}</div>
+                        </div>
+                        <div class="post-actions">
+                            <button class="btn btn-primary btn-sm" onclick="showPostModal(${post.postId}, '${statusStr}')">查看详情</button>
+                        </div>
+                    </div>
+                `);
+
+                $postsList.append($postItem);
+            });
+        }
+
+        // 更新分页
+        function updatePagination() {
+            const $pagination = $('#posts-pagination');
+            $pagination.empty();
+
+            if (totalPages === 0) {
+                return;
+            }
+
+            // 上一页
+            const $prev = $('<li class="' + (currentPage === 1 ? 'disabled' : '') + '"><a href="#" data-page="' + (currentPage - 1) + '">上一页</a></li>');
+            $pagination.append($prev);
+
+            // 页码
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    const $li = $('<li class="' + (i === currentPage ? 'active' : '') + '"><a href="#" data-page="' + i + '">' + i + '</a></li>');
+                    $pagination.append($li);
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    const $li = $('<li class="disabled"><a href="#">...</a></li>');
+                    $pagination.append($li);
+                }
+            }
+
+            // 下一页
+            const $next = $('<li class="' + (currentPage === totalPages ? 'disabled' : '') + '"><a href="#" data-page="' + (currentPage + 1) + '">下一页</a></li>');
+            $pagination.append($next);
+        }
+
+        // 分页点击事件
+        $(document).on('click', '#posts-pagination a', function(e) {
+            e.preventDefault();
+            if ($(this).parent().hasClass('disabled') || $(this).parent().hasClass('active')) {
+                return;
+            }
+
+            const page = parseInt($(this).data('page'), 10);
+            if (page && page >= 1 && page <= totalPages) {
+                currentPage = page;
+                loadPosts();
+            }
+        });
+        
+        // 显示帖子详情模态框
+        function showPostModal(postId, status) {
+            // 显示加载状态
+            $('#modalContent').html('<div style="text-align: center; padding: 20px;">加载中...</div>');
+            $('#postModal').modal('show');
+
+            // 从后端获取帖子详情
+            $.ajax({
+                url: '/admin/posts/detail/' + postId,
+                type: 'GET',
+                success: function(post) {
+                    renderPostModal(post, status);
+                },
+                error: function(xhr, status, error) {
+                    console.error('加载帖子详情失败:', error);
+                    $('#modalContent').html('<div style="text-align: center; padding: 20px; color: red;">加载失败，请刷新重试</div>');
+                }
+            });
+        }
+
+        // 渲染帖子详情模态框
+        function renderPostModal(post, status) {
+            const avatarUrl = getAvatarUrl(post.avatar);
+            const statusInfo = getStatusInfo(post.status);
+            const images = [];
+            if (post.image1) images.push(getImageUrl(post.image1));
+            if (post.image2) images.push(getImageUrl(post.image2));
+            if (post.image3) images.push(getImageUrl(post.image3));
+
+            let imagesHtml = '';
+            if (images.length > 0) {
+                imagesHtml = '<div class="images-container" style="text-align: center; margin-top: 15px;">';
+                images.forEach(function(imgUrl) {
+                    imagesHtml += `<img src="${imgUrl}" class="img-responsive" onclick="showImageViewer('${imgUrl}')" style="cursor: pointer; margin: 5px;">`;
+                });
+                imagesHtml += '</div>';
+            }
+
+            // 根据实际状态显示按钮
+            let actionsHtml = '';
+            if (post.status === 0) {
+                // 未审核状态：显示"通过"和"不通过"按钮
+                actionsHtml = `
+                    <div class="actions">
+                        <button class="btn-approve" onclick="approvePost(${post.postId})">通过</button>
+                        <button class="btn-reject" onclick="rejectPost(${post.postId})">不通过</button>
+                    </div>
+                `;
+            } else if (post.status === 1 || post.status === 4) {
+                // 已通过或未通过状态：显示"复审通过"和"复审不通过"按钮
+                actionsHtml = `
+                    <div class="review-actions">
+                        <button class="btn-review-pass" onclick="updatePostStatus(${post.postId}, 1)">复审通过</button>
+                        <button class="btn-review-reject" onclick="updatePostStatus(${post.postId}, 4)">复审不通过</button>
+                    </div>
+                `;
+            }
+            // 其他状态（已删除、已结束等）不显示按钮
+
+            const modalContent = `
+                <div class="social-feed-box">
+                    <div class="social-avatar">
+                        <img alt="image" src="${avatarUrl}" onerror="this.src='/img/user.png'">
+                        <div class="avatar-info">
+                            <a href="#">${post.username || '未知用户'}</a>
+                            <small class="text-muted">${formatDateTime(post.createTime)}</small>
+                        </div>
+                        ${post.status !== 0 ? `<div class="status-indicator ${statusInfo.class}">${statusInfo.text}</div>` : ''}
+                    </div>
+                    <div class="social-body">
+                        ${post.title ? `<h4>${post.title}</h4>` : ''}
+                        <p>${post.content || '无内容'}</p>
+                        ${imagesHtml}
+                        ${post.price ? `<p><strong>价格：</strong>¥${post.price}</p>` : ''}
+                        ${post.itemInfo ? `<p><strong>物品信息：</strong>${post.itemInfo}</p>` : ''}
+                        ${post.startPoint || post.endPoint ? `<p><strong>地点：</strong>${post.startPoint || ''} ${post.endPoint ? '→ ' + post.endPoint : ''}</p>` : ''}
+                        ${post.deadline ? `<p><strong>截止时间：</strong>${formatDateTime(post.deadline)}</p>` : ''}
+                    </div>
+                    <div class="social-footer">
+                        <div class="stats">
+                            <span><i class="fa fa-eye"></i> ${post.viewCount || 0}</span>
+                            <span><i class="fa fa-thumbs-up"></i> ${post.likeCount || 0}</span>
+                            <span><i class="fa fa-comments"></i> ${post.commentCount || 0}</span>
+                            <span><i class="fa fa-heart"></i> ${post.favoriteCount || 0}</span>
+                        </div>
+                        ${actionsHtml}
+                    </div>
+                </div>
+            `;
+
+            $('#modalContent').html(modalContent);
+        }
+        
+        // 显示图片查看器
+        function showImageViewer(imageSrc) {
+            $('#viewerImage').attr('src', imageSrc);
+            $('#imageViewerModal').modal('show');
+        }
+        
+        // 通过帖子
+        function approvePost(postId) {
+            updatePostStatus(postId, 1);
+        }
+        
+        // 不通过帖子
+        function rejectPost(postId) {
+            updatePostStatus(postId, 4);
+        }
+        
+        // 更新帖子状态
+        function updatePostStatus(postId, status) {
+            $.ajax({
+                url: '/admin/posts/updateStatus',
+                type: 'POST',
+                data: {
+                    postId: postId,
+                    status: status
+                },
+                success: function(data) {
+                    if (data.success) {
+                        $('#postModal').modal('hide');
+                        loadPosts();
+                        updatePendingPostsCount();
+                    } else {
+                        alert('操作失败：' + (data.message || '未知错误'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('更新帖子状态失败:', error);
+                    alert('操作失败，请刷新重试');
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

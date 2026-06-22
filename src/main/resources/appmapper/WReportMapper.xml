@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.app.dao.WReportMapper">
+
+    <insert id="insertReport">
+        INSERT INTO report (
+            reporter_id,
+            target_type,
+            target_id,
+            post_id,
+            interaction,
+            report_type,
+            description,
+            report_image,
+            status,
+            create_time
+        ) VALUES (
+            #{reporterId},
+            #{targetType},
+            #{targetId},
+            #{postId},
+            #{interaction},
+            #{reportType},
+            #{description},
+            #{reportImage},
+            #{status},
+            NOW()
+        )
+    </insert>
+
+    <select id="checkReportExists" resultType="Integer">
+        SELECT report_id
+        FROM report
+        WHERE reporter_id = #{reporterId}
+        AND target_type = #{targetType}
+        AND target_id = #{targetId}
+        LIMIT 1
+    </select>
+
+    <select id="checkReportExistsByTargetId" resultType="Integer">
+        SELECT report_id
+        FROM report
+        WHERE reporter_id = #{reporterId}
+        AND target_type = #{targetType}
+        AND target_id = #{targetId}
+        LIMIT 1
+    </select>
+
+    <select id="checkReportExistsByPostId" resultType="Integer">
+        SELECT report_id
+        FROM report
+        WHERE reporter_id = #{reporterId}
+        AND target_type = #{targetType}
+        AND post_id = #{postId}
+        LIMIT 1
+    </select>
+
+    <select id="checkReportExistsByInteraction" resultType="Integer">
+        SELECT report_id
+        FROM report
+        WHERE reporter_id = #{reporterId}
+        AND target_type = #{targetType}
+        AND interaction = #{interaction}
+        LIMIT 1
+    </select>
+
+</mapper>

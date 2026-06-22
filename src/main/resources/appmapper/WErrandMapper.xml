@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.app.dao.WErrandMapper">
+
+    <resultMap id="PostVOMap" type="PostVO">
+        <id property="postId" column="post_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="avatar" column="avatar"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="startPoint" column="start_point"/>
+        <result property="endPoint" column="end_point"/>
+        <result property="price" column="price"/>
+        <result property="itemInfo" column="item_info"/>
+        <result property="contactInfo" column="contact_info"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="image1" column="image1"/>
+        <result property="image2" column="image2"/>
+        <result property="image3" column="image3"/>
+    </resultMap>
+
+    <select id="selectErrandOrders" resultMap="PostVOMap">
+        SELECT
+            p.post_id,
+            p.user_id,
+            p.category_id,
+            p.title,
+            p.content,
+            p.start_point,
+            p.end_point,
+            p.price,
+            p.item_info,
+            p.contact_info,
+            p.status,
+            p.create_time,
+            p.image1,
+            p.image2,
+            p.image3,
+            u.username,
+            u.avatar,
+            c.name as category_name
+        FROM post p
+        LEFT JOIN user u ON p.user_id = u.user_id
+        LEFT JOIN category c ON p.category_id = c.category_id
+        WHERE p.category_id = 2
+        <if test="statusList != null and statusList.size() > 0">
+            AND p.status IN
+            <foreach collection="statusList" item="status" open="(" separator="," close=")">
+                #{status}
+            </foreach>
+        </if>
+        <if test="statusList == null or statusList.size() == 0">
+            AND p.status IN (0, 1)
+        </if>
+        ORDER BY p.create_time DESC
+        LIMIT #{start}, #{size}
+    </select>
+
+    <select id="countErrandOrders" resultType="int">
+        SELECT COUNT(*)
+        FROM post p
+        WHERE p.category_id = 2
+        <if test="statusList != null and statusList.size() > 0">
+            AND p.status IN
+            <foreach collection="statusList" item="status" open="(" separator="," close=")">
+                #{status}
+            </foreach>
+        </if>
+        <if test="statusList == null or statusList.size() == 0">
+            AND p.status IN (0, 1)
+        </if>
+    </select>
+
+    <select id="selectErrandOrderById" resultMap="PostVOMap">
+        SELECT
+            p.post_id,
+            p.user_id,
+            p.category_id,
+            p.title,
+            p.content,
+            p.start_point,
+            p.end_point,
+            p.price,
+            p.item_info,
+            p.contact_info,
+            p.status,
+            p.create_time,
+            p.image1,
+            p.image2,
+            p.image3,
+            u.username,
+            u.avatar,
+            c.name as category_name
+        FROM post p
+        LEFT JOIN user u ON p.user_id = u.user_id
+        LEFT JOIN category c ON p.category_id = c.category_id
+        WHERE p.post_id = #{postId} AND p.category_id = 2
+    </select>
+
+    <update id="incrementViewCount">
+        UPDATE post
+        SET view_count = view_count + 1
+        WHERE post_id = #{postId}
+    </update>
+
+    <update id="updatePostStatusToInProgress">
+        UPDATE post
+        SET status = 5
+        WHERE post_id = #{postId} AND category_id = 2
+    </update>
+
+    <insert id="insertTradeTask">
+        INSERT INTO trade_task (
+            task_no, post_id, creator_id, acceptor_id, task_type,
+            title, description, amount, start_location, end_location,
+            remark,
+            task_status, create_time
+        ) VALUES (
+            #{taskNo}, #{postId}, #{creatorId}, #{acceptorId}, '跑腿服务',
+            #{title}, #{description}, #{amount}, #{startLocation}, #{endLocation},
+            CONCAT(
+                '{"contactInfo":"', IFNULL(#{contactInfo}, ''), '",',
+                '"images":[',
+                IF(#{image1} IS NOT NULL, CONCAT('"', #{image1}, '"'), ''),
+                IF(#{image1} IS NOT NULL AND #{image2} IS NOT NULL, ',', ''),
+                IF(#{image2} IS NOT NULL, CONCAT('"', #{image2}, '"'), ''),
+                IF((#{image1} IS NOT NULL OR #{image2} IS NOT NULL) AND #{image3} IS NOT NULL, ',', ''),
+                IF(#{image3} IS NOT NULL, CONCAT('"', #{image3}, '"'), ''),
+                ']}'
+            ),
+            0, NOW()
+        )
+    </insert>
+
+    <select id="selectTradeTaskByPostId" resultType="java.util.HashMap">
+        SELECT 
+            tt.task_id as taskId,
+            tt.task_no as taskNo,
+            tt.post_id as postId,
+            tt.creator_id as creatorId,
+            tt.acceptor_id as acceptorId,
+            tt.task_type as taskType,
+            tt.title,
+            tt.description,
+            tt.amount,
+            tt.start_location as startLocation,
+            tt.end_location as endLocation,
+            tt.remark,
+            tt.task_status as taskStatus,
+            tt.create_time as createTime,
+            u.username as acceptorUsername,
+            u.avatar as acceptorAvatar,
+            COALESCE(p.contact_info, '') as contactInfo,
+            CASE WHEN p.image1 IS NOT NULL AND p.image1 != '' THEN p.image1 ELSE NULL END as image1,
+            CASE WHEN p.image2 IS NOT NULL AND p.image2 != '' THEN p.image2 ELSE NULL END as image2,
+            CASE WHEN p.image3 IS NOT NULL AND p.image3 != '' THEN p.image3 ELSE NULL END as image3
+        FROM trade_task tt
+        LEFT JOIN user u ON tt.acceptor_id = u.user_id
+        LEFT JOIN post p ON tt.post_id = p.post_id
+        WHERE tt.post_id = #{postId}
+        LIMIT 1
+    </select>
+
+    <select id="selectTradeTasksByAcceptorId" resultType="java.util.HashMap">
+        SELECT 
+            tt.task_id as taskId,
+            tt.task_no as taskNo,
+            tt.post_id as postId,
+            tt.creator_id as creatorId,
+            tt.acceptor_id as acceptorId,
+            tt.task_type as taskType,
+            tt.title,
+            tt.description,
+            tt.amount,
+            tt.start_location as startLocation,
+            tt.end_location as endLocation,
+            tt.remark,
+            tt.task_status as taskStatus,
+            tt.create_time as createTime,
+            u.username as creatorUsername,
+            u.avatar as creatorAvatar,
+            COALESCE(p.contact_info, '') as contactInfo,
+            CASE WHEN p.image1 IS NOT NULL AND p.image1 != '' THEN p.image1 ELSE NULL END as image1,
+            CASE WHEN p.image2 IS NOT NULL AND p.image2 != '' THEN p.image2 ELSE NULL END as image2,
+            CASE WHEN p.image3 IS NOT NULL AND p.image3 != '' THEN p.image3 ELSE NULL END as image3,
+            p.status as status
+        FROM trade_task tt
+        LEFT JOIN user u ON tt.creator_id = u.user_id
+        LEFT JOIN post p ON tt.post_id = p.post_id
+        WHERE tt.acceptor_id = #{acceptorId}
+        AND tt.task_type = '跑腿服务'
+        ORDER BY tt.create_time DESC
+    </select>
+
+    <update id="updatePostStatusToDeleted">
+        UPDATE post
+        SET status = 2
+        WHERE post_id = #{postId} 
+        AND user_id = #{userId}
+        AND category_id = 2
+        AND status != 3
+    </update>
+
+    <update id="updateTradeTaskStatusToCompleted">
+        UPDATE trade_task
+        SET task_status = 1,
+            update_time = NOW()
+        WHERE post_id = #{postId}
+        AND acceptor_id = #{acceptorId}
+        AND task_type = '跑腿服务'
+    </update>
+
+    <update id="updatePostStatusToCompleted">
+        UPDATE post
+        SET status = 3
+        WHERE post_id = #{postId}
+        AND category_id = 2
+    </update>
+    
+    <select id="selectUserErrandPosts" resultMap="PostVOMap">
+        SELECT
+            p.post_id,
+            p.user_id,
+            p.category_id,
+            p.title,
+            p.content,
+            p.start_point,
+            p.end_point,
+            p.price,
+            p.item_info,
+            p.contact_info,
+            p.status,
+            p.create_time,
+            p.image1,
+            p.image2,
+            p.image3,
+            u.username,
+            u.avatar,
+            c.name as category_name
+        FROM post p
+        LEFT JOIN user u ON p.user_id = u.user_id
+        LEFT JOIN category c ON p.category_id = c.category_id
+        WHERE p.user_id = #{userId}
+        AND p.category_id = #{categoryId}
+        ORDER BY p.create_time DESC
+    </select>
+
+</mapper>
